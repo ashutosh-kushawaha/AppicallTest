@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using WebAppTestAPI.DataConnection;
 using WebAppTestAPI.Model;
 
 namespace WebAppTestAPI.Controllers
@@ -12,14 +13,43 @@ namespace WebAppTestAPI.Controllers
     [ApiController]
     public class StudentController : ControllerBase
     {
+        private readonly ApplicationDbContext _context;
+
+        public StudentController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpPost]
         public bool SaveStudent(Student stdObj)
         {
-            if (stdObj.Name == "Ram")
+            try
             {
+                _context.Students.Add(stdObj);
+                _context.SaveChanges();
                 return true;
             }
-            else
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        [HttpDelete("{Id}")]
+        public bool DeleteStudent(int Id)
+        {
+            try
+            {
+                var data = _context.Students.Where(x => x.Roll == Id).FirstOrDefault();
+                if (data != null)
+                {
+                    _context.Students.Remove(data);
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
             {
                 return false;
             }
@@ -28,44 +58,45 @@ namespace WebAppTestAPI.Controllers
         [HttpGet]
         public List<Student> GetAllStudent()
         {
-            List<Student> stdList = new List<Student>();
-            Student student1 = new Student()
-            {
-                Id = 1,
-                Name = "Ram",
-                Roll = 1,
-                Email = "ram@gmail.com"
-            };
-            Student student2 = new Student()
-            {
-                Id = 2,
-                Name = "Hari",
-                Roll = 2,
-                Email = "hari@gmail.com"
-            };
-            stdList.Add(student1);
-            stdList.Add(student2);
-            return stdList;
+            //List<Student> stdList = new List<Student>();
+            //Student student1 = new Student()
+            //{
+            //    Id = 1,
+            //    Name = "Ram",
+            //    Roll = 1,
+            //    Email = "ram@gmail.com"
+            //};
+            //Student student2 = new Student()
+            //{
+            //    Id = 2,
+            //    Name = "Hari",
+            //    Roll = 2,
+            //    Email = "hari@gmail.com"
+            //};
+            //stdList.Add(student1);
+            //stdList.Add(student2);
+            var data = _context.Students.ToList();
+            return data;
         }
 
         [HttpGet("studentById/{Id}")]
         public Student GetStudentDetails(int Id)
         {
-            Student student2 = new Student()
-            {
-                Id = 2,
-                Name = "Hari",
-                Roll = 2,
-                Email = "hari@gmail.com"
-            };
-            return student2;
+            //Student student2 = new Student()
+            //{
+            //    Id = 2,
+            //    Name = "Hari",
+            //    Roll = 2,
+            //    Email = "hari@gmail.com"
+            //};
+            var data = _context.Students.Where(x => x.Roll == Id).FirstOrDefault();
+            return data;
         }
 
         [HttpGet("match/name/list/{name}")]
         public List<Student> GetMatchStudentNameList(string name)
         {
-            var data = GetStudent();
-            var res = data.Where(x => x.Name == name).OrderByDescending(x => x.Roll).ToList();
+            var res = _context.Students.Where(x => x.Name == name).OrderByDescending(x => x.Roll).ToList();
             return res;
         }
 
@@ -105,6 +136,21 @@ namespace WebAppTestAPI.Controllers
             stdList.Add(student3);
             stdList.Add(student4);
             return stdList;
+        }
+
+        [HttpPut]
+        public bool UpdateStudent(Student student)
+        {
+            var data = _context.Students.Where(x => x.Roll == student.Roll).FirstOrDefault();
+            if (data != null)
+            {
+                data.Email = student.Email;
+                data.Name = student.Name;
+                _context.Students.Update(data);
+                _context.SaveChanges();
+                return true;
+            }
+            return false;
         }
     }
 }
